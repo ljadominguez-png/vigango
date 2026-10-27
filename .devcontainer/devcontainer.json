@@ -1,0 +1,16 @@
+{
+  "name": "Flutter Android & Web Dev",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Dart-Code.flutter",
+        "Dart-Code.dart-code"
+      ]
+    }
+  },
+  "forwardPorts": [8080],
+  "remoteUser": "root"
+}
