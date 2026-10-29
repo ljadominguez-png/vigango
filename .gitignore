@@ -52,13 +52,13 @@ app.*.symbols
 app.*.map.json
 
 # Python
-pycache/
-.py[cod]
+__pycache__/
+*.py[cod]
 .venv/
 .pytest_cache/
 .ruff_cache/
 
 # Secrets
 .env
-.env.
+.env.*
 !.env.example
