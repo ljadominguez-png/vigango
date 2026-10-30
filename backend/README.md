@@ -197,4 +197,17 @@ and Delete (CRUD).
 
 ------------------------------------------------------------------------
 
-**End of Documentation**
+## 8. Setup Instructions for Team Members
+
+1. Clone the repository and navigate to the backend folder.
+2. Create a .env file and add the database connection string:
+   DATABASE_URL=your_supabase_connection_string
+3. Create and activate the Python virtual environment:
+   python -m venv venv
+   .\venv\Scripts\Activate.ps1
+4. Install the dependencies:
+   pip install -r requirements.txt
+5. Start the backend:
+   uvicorn app.main:app --reload
+6. Visit http://127.0.0.1:8000/docs to access Swagger UI.
+Note: Team members must obtain the Supabase connection string from an authorized project member. Never commit or upload .env to GitHub.
