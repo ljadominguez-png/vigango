@@ -1,4 +1,4 @@
-import uuid
+﻿import uuid
 from datetime import datetime
 
 from sqlalchemy import BigInteger, DateTime, ForeignKey, Identity, Text, UniqueConstraint, Uuid, func
@@ -9,18 +9,21 @@ from app.database import Base
 
 class User(Base):
     """
-    App profile: only username and email.
+    App account: username, email and a hashed password.
 
-    The id is the same UUID as the user's row in Supabase Auth (auth.users).
-    The database trigger from the SQL script creates this row on sign-up,
-    so the app normally never inserts into this table itself.
+    password_hash must hold a hash created by the backend (bcrypt or argon2),
+    never the plain password. Never return password_hash in an API response.
     """
 
     __tablename__ = "users"
 
-    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, primary_key=True, server_default=func.gen_random_uuid()
+    )
     username: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
     email: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    image_url: Mapped[str | None] = mapped_column(Text)  # profile picture URL, optional
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
