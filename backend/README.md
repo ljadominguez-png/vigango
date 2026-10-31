@@ -68,7 +68,7 @@ The integration tests validate the local test database connection settings befor
 See the [documentation index](docs/README.md) for feature-level implementation reports:
 
 - [F3: Database connection](docs/f3-database-connection.md)
-- [F4: Database models](docs/f4-database-models.md)
+- [F4.1: Database models](docs/f4.1-database-models.md)
 - [F4.2: User registration](docs/f4.2-user-registration.md)
 
 The README is the **current setup guide**. Feature reports under `docs/` preserve implementation details and historical progress.
