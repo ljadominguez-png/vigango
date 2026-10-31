@@ -1,7 +1,8 @@
-from fastapi.testclient import TestClient
 from app.main import app
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
+
 
 # Check if "/health" returns a status code 200 and a dict {"status": "ok"}
 def test_health_returns_ok():
