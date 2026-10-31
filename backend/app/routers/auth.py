@@ -1,5 +1,7 @@
 """Handle user registration requests through the authentication API."""
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -16,11 +18,15 @@ router = APIRouter(
 )
 
 
-# Register a new user with a securely hashed password
+# Register a new user with a securely hashed password..
 @router.post(
-    "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
+    "/register",
+    response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED,
 )
-def register_user(data: RegisterRequest, db: Session = Depends(get_db)) -> User:
+def register_user(
+    data: RegisterRequest, db: Annotated[Session, Depends(get_db)]
+) -> User:
     existing_user = db.scalar(
         select(User.id).where(
             (User.username == data.username) | (User.email == data.email)
