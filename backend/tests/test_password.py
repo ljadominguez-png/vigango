@@ -1,3 +1,5 @@
+"""Test password hashing and credential verification utilities."""
+
 from app.services.password import hash_password, verify_password
 
 
