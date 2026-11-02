@@ -22,7 +22,7 @@ void showTermsOfServiceSheet(BuildContext context) {
                 children: [
                   Center(
                     child: const Text(
-                      'Privacy Policy',
+                      'Terms of Service',
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),

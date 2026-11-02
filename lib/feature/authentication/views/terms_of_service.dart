@@ -31,7 +31,7 @@ class _TermsOfServiceState extends State<TermsOfService> {
             Text("I agree to the "),
             InkWell(
               onTap: () => showTermsOfServiceSheet(context),
-          child: Text("Privacy Policy",
+          child: Text("Terms of Service",
           style: TextStyle(decoration: TextDecoration.underline),),
         ),
           ],
