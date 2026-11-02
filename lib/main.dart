@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:vigango/app.dart';
+void main() async{
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
-void main() {
-  runApp(const MyApp());
+  usePathUrlStrategy();
+
+  await Future.delayed(const Duration(seconds: 2));
+  FlutterNativeSplash.remove();
+  runApp(const ViganGo());
 }
 
+/*
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -119,4 +129,4 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
-}
+}*/

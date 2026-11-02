@@ -12,5 +12,8 @@
     }
   },
   "forwardPorts": [8080],
-  "remoteUser": "root"
+  "remoteUser": "root",
+  "runArgs": [
+  "--net=host"
+]
 }
