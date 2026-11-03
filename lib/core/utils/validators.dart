@@ -11,6 +11,17 @@ class AppValidators{
       return null;
   }
 
+  static String? validateUsername(String? value){
+    if (value == null || value.trim().isEmpty){
+      return 'Username required';
+    }
+    final validUsername = RegExp(r'^[\w]{3,16}$');
+    if(!validUsername.hasMatch(value.trim())){
+      return 'please enter a valid username';
+    }
+    return null;
+  }
+
   static String? validateField(String? value, String fieldname){
     if( value == null || value.trim().isEmpty){
       return '$fieldname cannot be empty!';

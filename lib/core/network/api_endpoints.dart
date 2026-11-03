@@ -7,5 +7,6 @@ class ApiEndpoints {
     return 'http://10.0.2.2:8000';
   }
   static String get register => '$baseUrl/api/v1/auth/register';
-  static String get login => '$baseUrl/auth/login';
+  static String get login => '$baseUrl/api/v1/auth/login';
+  static String get googleAuth => '$baseUrl/api/v1/auth/google';
 }

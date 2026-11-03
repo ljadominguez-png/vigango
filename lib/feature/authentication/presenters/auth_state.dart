@@ -19,3 +19,8 @@ class AuthSuccess extends AuthState{
   final UserModel user;
   const AuthSuccess(this.user);
 }
+
+class AuthFailure extends AuthState{
+  final String error;
+  const AuthFailure(this.error);
+}

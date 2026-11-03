@@ -74,42 +74,6 @@ class _SignUpState extends State<SignUp> {
                   ],
                 ),
                 const SizedBox(height: 18),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text("Password"),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller:_passwordController,
-                      decoration: InputDecoration(
-                        hintText: "Min 8 Characters",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        suffixIcon: Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: IconButton(
-                            onPressed: () {
-                              setState(() {
-                                _obscureText = !_obscureText;
-                              });
-                            },
-                            icon: Icon(
-                              _obscureText
-                                  ? LucideIcons.eyeOff
-                                  : LucideIcons.eye,
-                            ),
-                          ),
-                        ),
-                      ),
-                      obscureText: _obscureText,
-                      validator: (value) {
-                        AppValidators.validatePassword(value);
-                      }
-                    ),
-                  ],
-                ),
-
                 const SizedBox(height: 18),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -176,4 +140,6 @@ class _SignUpState extends State<SignUp> {
       ),
     );
   }
+
+  
 }
