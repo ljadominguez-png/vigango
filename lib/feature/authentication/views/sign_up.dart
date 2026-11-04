@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:vigango/core/utils/validators.dart';
 import 'package:vigango/core/widgets/buttons/noicon.dart';
+import 'package:vigango/feature/authentication/widgets/emailfield.dart';
+import 'package:vigango/feature/authentication/widgets/password_field.dart';
 
 class SignUp extends StatefulWidget {
   const SignUp({super.key});
@@ -59,60 +61,21 @@ class _SignUpState extends State<SignUp> {
                   children: [
                     const Text("Email"),
                     const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _emailController,
-                      decoration: InputDecoration(
-                        hintText: "you@example.com",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                      ),
-                      validator: (value) {
-                        return AppValidators.validateEmail(value);
-                      },
-                    ),
+                    emailField(emailController: _emailController),
                   ],
                 ),
                 const SizedBox(height: 18),
-                const SizedBox(height: 18),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text("Confirm Password"),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _confirmPassword,
-                      decoration: InputDecoration(
-                        hintText: "Min 8 Characters",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        suffixIcon: Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: IconButton(
-                            onPressed: () {
-                              setState(() {
-                                _obscureText2 = !_obscureText2;
-                              });
-                            },
-                            icon: Icon(
-                              _obscureText2
-                                  ? LucideIcons.eyeOff
-                                  : LucideIcons.eye,
-                            ),
-                          ),
-                        ),
-                      ),
-                      obscureText: _obscureText2,
-                      validator: (value) { 
-                        return AppValidators.validatePassword(value);
-                      },
-                    ),
-                  ],
+                PasswordField(
+                controller: _passwordController, 
+                hintText: 'Min of 8 characters',
+                label: 'Password',
                 ),
-
+                const SizedBox(height: 18),
+                PasswordField(
+                  controller: _confirmPassword, 
+                  label: 'Confirm Password', 
+                  hintText: ''),
                 const SizedBox(height: 36),
-
                 NoIcon(
                   buttonLabel: 'Create Account',
                   enablebackground: true,
@@ -123,7 +86,6 @@ class _SignUpState extends State<SignUp> {
                       _hasAttempted = true;
                     });
                     if (_formKey.currentState!.validate()) {
-
                        print("Form is perfectly clean. Routing data...");
                     } else {
                       // If it returns false, Flutter automatically halts execution
@@ -143,3 +105,4 @@ class _SignUpState extends State<SignUp> {
 
   
 }
+

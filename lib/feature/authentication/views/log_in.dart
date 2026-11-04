@@ -12,9 +12,18 @@ class LogIn extends StatefulWidget {
 }
 
 class _LogInState extends State<LogIn> {
+      final TextEditingController _passwordController = TextEditingController();
       bool _obscureText = true;
       bool _hasAttempted = false;
       final _formKey = GlobalKey<FormState>();
+
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
