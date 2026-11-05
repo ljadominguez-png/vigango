@@ -11,6 +11,7 @@ from app.services.password import verify_password
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, select
 from sqlalchemy.engine import make_url
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 
@@ -131,3 +132,59 @@ def test_register_rejects_duplicates(postgres_client):
     )
 
     assert duplicate_email.status_code == 409
+
+
+# Verify that Google-only accounts can be stored without passwords.
+def test_google_only_user_can_be_stored(postgres_client):
+    _, connection = postgres_client
+
+    identifier = uuid4().hex
+
+    new_user = User(
+        username=f"google_{identifier[:12]}",
+        email=f"google_{identifier}@example.com",
+        password_hash=None,
+        google_id=f"google-sub-{identifier}",
+    )
+
+    with Session(
+        bind=connection,
+        join_transaction_mode="create_savepoint",
+    ) as db:
+        db.add(new_user)
+        db.flush()
+
+        stored_user = db.scalar(
+            select(User).where(User.google_id == new_user.google_id)
+        )
+
+        assert stored_user is not None
+        assert stored_user.password_hash is None
+        assert stored_user.google_id == new_user.google_id
+
+        db.commit()
+
+
+# Verify that accounts cannot exist without a login method.
+def test_user_requires_login_method(postgres_client):
+    _, connection = postgres_client
+
+    identifier = uuid4().hex
+
+    invalid_user = User(
+        username=f"invalid_{identifier[:12]}",
+        email=f"invalid_{identifier}@example.com",
+        password_hash=None,
+        google_id=None,
+    )
+
+    with Session(
+        bind=connection,
+        join_transaction_mode="create_savepoint",
+    ) as db:
+        db.add(invalid_user)
+
+        with pytest.raises(IntegrityError):
+            db.flush()
+
+        db.rollback()
