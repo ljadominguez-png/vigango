@@ -418,3 +418,71 @@ def test_register_rejects_case_variant_email(postgres_client):
     )
 
     assert duplicate.status_code == 409
+
+
+# Verify PostgreSQL rejects case-variant usernames directly.
+def test_database_rejects_case_variant_username(postgres_client):
+    _, connection = postgres_client
+    identifier = uuid4().hex
+
+    with Session(
+        bind=connection,
+        join_transaction_mode="create_savepoint",
+    ) as db:
+        db.add(
+            User(
+                username=f"Traveler_{identifier[:12]}",
+                email=f"first_{identifier}@example.com",
+                google_id=f"google-first-{identifier}",
+                password_hash=None,
+            )
+        )
+        db.flush()
+
+        db.add(
+            User(
+                username=f"traveler_{identifier[:12]}",
+                email=f"second_{identifier}@example.com",
+                google_id=f"google-second-{identifier}",
+                password_hash=None,
+            )
+        )
+
+        with pytest.raises(IntegrityError):
+            db.flush()
+
+        db.rollback()
+
+
+# Verify PostgreSQL rejects case-variant emails directly.
+def test_database_rejects_case_variant_email(postgres_client):
+    _, connection = postgres_client
+    identifier = uuid4().hex
+
+    with Session(
+        bind=connection,
+        join_transaction_mode="create_savepoint",
+    ) as db:
+        db.add(
+            User(
+                username=f"first_{identifier[:12]}",
+                email=f"Traveler_{identifier}@example.com",
+                google_id=f"google-first-{identifier}",
+                password_hash=None,
+            )
+        )
+        db.flush()
+
+        db.add(
+            User(
+                username=f"second_{identifier[:12]}",
+                email=f"traveler_{identifier}@example.com",
+                google_id=f"google-second-{identifier}",
+                password_hash=None,
+            )
+        )
+
+        with pytest.raises(IntegrityError):
+            db.flush()
+
+        db.rollback()
