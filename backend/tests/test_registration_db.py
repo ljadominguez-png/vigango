@@ -358,3 +358,63 @@ def test_google_registration_rejects_existing_username(
     ).scalar_one()
 
     assert count == 0
+
+
+# Reject usernames that differ only by letter casing.
+def test_register_rejects_case_variant_username(postgres_client):
+    client, _ = postgres_client
+
+    identifier = uuid4().hex[:12]
+    username = f"Traveler_{identifier}"
+
+    first = client.post(
+        "/api/v1/auth/register",
+        json={
+            "username": username,
+            "email": f"first_{identifier}@example.com",
+            "password": "ExamplePassword123!",
+        },
+    )
+
+    assert first.status_code == 201
+
+    duplicate = client.post(
+        "/api/v1/auth/register",
+        json={
+            "username": username.lower(),
+            "email": f"second_{identifier}@example.com",
+            "password": "ExamplePassword123!",
+        },
+    )
+
+    assert duplicate.status_code == 409
+
+
+# Reject email addresses that differ only by letter casing.
+def test_register_rejects_case_variant_email(postgres_client):
+    client, _ = postgres_client
+
+    identifier = uuid4().hex[:12]
+    email = f"Traveler_{identifier}@example.com"
+
+    first = client.post(
+        "/api/v1/auth/register",
+        json={
+            "username": f"first_{identifier}",
+            "email": email,
+            "password": "ExamplePassword123!",
+        },
+    )
+
+    assert first.status_code == 201
+
+    duplicate = client.post(
+        "/api/v1/auth/register",
+        json={
+            "username": f"second_{identifier}",
+            "email": email.lower(),
+            "password": "ExamplePassword123!",
+        },
+    )
+
+    assert duplicate.status_code == 409

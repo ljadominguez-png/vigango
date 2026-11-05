@@ -33,9 +33,11 @@ router = APIRouter(
 def register_user(
     data: RegisterRequest, db: Annotated[Session, Depends(get_db)]
 ) -> User:
+    # Check usernames and emails without case sensitivity.
     existing_user = db.scalar(
         select(User.id).where(
-            (User.username == data.username) | (User.email == data.email)
+            (func.lower(User.username) == data.username.lower())
+            | (func.lower(User.email) == data.email.lower())
         )
     )
 
