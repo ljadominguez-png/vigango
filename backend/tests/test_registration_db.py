@@ -7,9 +7,12 @@ import pytest
 from app.database import get_db
 from app.main import app
 from app.models import User
+from app.routers import auth as auth_router
+from app.services.google_config import get_google_client_id
+from app.services.google_identity import GoogleIdentity
 from app.services.password import verify_password
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, func, select
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -188,3 +191,170 @@ def test_user_requires_login_method(postgres_client):
             db.flush()
 
         db.rollback()
+
+
+# Provide a verified Google identity without contacting Google.
+@pytest.fixture
+def trusted_google_identity(monkeypatch):
+    identifier = uuid4().hex
+
+    identity = GoogleIdentity(
+        google_id=f"google-sub-{identifier}",
+        email=f"google_{identifier}@example.com",
+        picture_url="https://example.com/avatar.png",
+    )
+
+    # Simulate successful verification of a Google ID token.
+    def fake_verify(token: str, client_id: str) -> GoogleIdentity:
+        assert token == "integration-test-token"
+        assert client_id == "integration-test-client"
+        return identity
+
+    monkeypatch.setattr(
+        auth_router,
+        "verify_google_token",
+        fake_verify,
+    )
+
+    app.dependency_overrides[get_google_client_id] = lambda: "integration-test-client"
+
+    try:
+        yield identity
+    finally:
+        app.dependency_overrides.pop(get_google_client_id, None)
+
+
+# Verify Google registration persists an account in PostgreSQL.
+def test_google_registration_persists_user(postgres_client, trusted_google_identity):
+    client, connection = postgres_client
+    identity = trusted_google_identity
+
+    response = client.post(
+        "/api/v1/auth/google",
+        json={
+            "id_token": "integration-test-token",
+            "username": f"traveler_{uuid4().hex[:12]}",
+        },
+    )
+
+    assert response.status_code == 201
+    assert "google_id" not in response.json()
+    assert "password_hash" not in response.json()
+
+    stored = connection.execute(
+        select(User.google_id, User.email, User.password_hash).where(
+            User.google_id == identity.google_id
+        )
+    ).one()
+
+    assert stored.google_id == identity.google_id
+    assert stored.email == identity.email
+    assert stored.password_hash is None
+
+
+# Verify returning Google users do not create duplicate accounts.
+def test_google_registration_returns_existing_user(
+    postgres_client, trusted_google_identity
+):
+    client, connection = postgres_client
+    identity = trusted_google_identity
+
+    first = client.post(
+        "/api/v1/auth/google",
+        json={
+            "id_token": "integration-test-token",
+            "username": f"traveler_{uuid4().hex[:12]}",
+        },
+    )
+
+    assert first.status_code == 201
+
+    second = client.post(
+        "/api/v1/auth/google",
+        json={"id_token": "integration-test-token"},
+    )
+
+    assert second.status_code == 200
+    assert second.json()["id"] == first.json()["id"]
+
+    count = connection.execute(
+        select(func.count())
+        .select_from(User)
+        .where(User.google_id == identity.google_id)
+    ).scalar_one()
+
+    assert count == 1
+
+
+# Verify Google cannot automatically claim an existing email account.
+def test_google_registration_rejects_existing_email(
+    postgres_client, trusted_google_identity
+):
+    client, connection = postgres_client
+    identity = trusted_google_identity
+
+    local_account = client.post(
+        "/api/v1/auth/register",
+        json={
+            "username": f"local_{uuid4().hex[:12]}",
+            "email": identity.email,
+            "password": "ExamplePassword123!",
+        },
+    )
+
+    assert local_account.status_code == 201
+
+    response = client.post(
+        "/api/v1/auth/google",
+        json={
+            "id_token": "integration-test-token",
+            "username": f"google_{uuid4().hex[:12]}",
+        },
+    )
+
+    assert response.status_code == 409
+
+    stored_google_id = connection.execute(
+        select(User.google_id).where(User.email == identity.email)
+    ).scalar_one()
+
+    assert stored_google_id is None
+
+
+# Verify Google registration rejects an occupied username.
+def test_google_registration_rejects_existing_username(
+    postgres_client, trusted_google_identity
+):
+    client, connection = postgres_client
+    identity = trusted_google_identity
+
+    username = f"taken_{uuid4().hex[:12]}"
+
+    local_account = client.post(
+        "/api/v1/auth/register",
+        json={
+            "username": username,
+            "email": f"local_{uuid4().hex}@example.com",
+            "password": "ExamplePassword123!",
+        },
+    )
+
+    assert local_account.status_code == 201
+
+    response = client.post(
+        "/api/v1/auth/google",
+        json={
+            "id_token": "integration-test-token",
+            "username": username,
+        },
+    )
+
+    assert response.status_code == 409
+
+    count = connection.execute(
+        select(func.count())
+        .select_from(User)
+        .where(User.google_id == identity.google_id)
+    ).scalar_one()
+
+    assert count == 0
