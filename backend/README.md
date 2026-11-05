@@ -8,6 +8,7 @@ FastAPI backend for **ViganGo**, a local activities and tourism discovery platfo
 | ------ | ----------------------- | ------------------------------------------------------------- |
 | `GET`  | `/health`               | Verify that the API is responding.                            |
 | `POST` | `/api/v1/auth/register` | Validate and register a user with a securely hashed password. |
+| `POST` | `/api/v1/auth/google`   | Register or find a verified Google account.                   |
 
 The registration endpoint returns **201** on success, **409** for a duplicate username/email, and **422** for invalid request data. User responses never include `password_hash`.
 
@@ -17,6 +18,7 @@ The registration endpoint returns **201** on success, **409** for a duplicate us
 - **Database:** PostgreSQL (team-hosted Supabase), SQLAlchemy, Psycopg
 - **Password hashing:** Argon2id via `pwdlib`
 - **Testing:** Pytest, HTTPX/FastAPI TestClient; Docker PostgreSQL for integration tests
+- **Google authentication:** Google ID token verification via `google-auth`
 
 ## Local setup
 
@@ -27,6 +29,12 @@ cd backend
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements-dev.txt
+```
+
+Use an authorized OAuth client ID from your team's Google configuration. Do not invent one or commit credentials.
+
+```bash
+export GOOGLE_CLIENT_ID="your-google-web-client-id"
 ```
 
 Create `backend/.env` with a **team-authorized** connection string:
