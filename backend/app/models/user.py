@@ -8,6 +8,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Identity,
+    Index,
     Text,
     UniqueConstraint,
     Uuid,
@@ -28,6 +29,8 @@ class User(Base):
     never the plain password. Google accounts have no password, so
     password_hash is None and google_id holds Google's stable user ID.
     Every account must have at least one of the two.
+    Username and email are unique without regard to letter case
+    (see the lower() indexes below the class).
     Never return password_hash in an API response.
     """
 
@@ -54,6 +57,12 @@ class User(Base):
     favorites: Mapped[list["Favorite"]] = relationship(
         back_populates="user", cascade="all, delete-orphan", passive_deletes=True
     )
+
+
+# Case-insensitive uniqueness for username and email.
+# Matches backend/sql/2026-11-05_users_lower_unique_indexes.sql.
+Index("users_username_lower_idx", func.lower(User.username), unique=True)
+Index("users_email_lower_idx", func.lower(User.email), unique=True)
 
 
 class Favorite(Base):
