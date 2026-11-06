@@ -3,3 +3,5 @@ sqlalchemy
 psycopg[binary]
 pydantic-settings
 pwdlib[argon2]
+google-auth
+requests
