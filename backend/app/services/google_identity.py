@@ -50,13 +50,14 @@ def verify_google_token(token: str, client_id: str) -> GoogleIdentity:
 
     google_id = claims.get("sub")
     email = claims.get("email")
+    email_verified = claims.get("email_verified")
 
     if (
         not isinstance(google_id, str)
         or not google_id.strip()
         or not isinstance(email, str)
         or not email.strip()
-        or claims.get("email_verified") is not True
+        or not (email_verified is True or email_verified == "true")
     ):
         raise InvalidGoogleToken("Google token does not contain a verified identity.")
 
