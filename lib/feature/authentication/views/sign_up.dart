@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vigango/core/routers/app_router.dart';
+import 'package:vigango/core/utils/sanitizers.dart';
 import 'package:vigango/core/utils/validators.dart';
 import 'package:vigango/core/widgets/buttons/noicon.dart';
 import 'package:vigango/feature/authentication/models/registerrequest.dart';
@@ -38,6 +39,26 @@ class _SignUpState extends State<SignUp> {
     _passwordController.dispose();
     _confirmPassword.dispose();
     super.dispose();
+  }
+
+  void _submit() async {
+    String clean_email = AppSanitizer.email(_emailController.text);
+    String rawPassword = _passwordController.text;
+
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _hasAttempted = true;
+    });
+    if (_formKey.currentState!.validate()) {
+      print("Form is perfectly clean. Routing data...");
+      context.push(AppRouter.username_register,
+          extra: Registerrequest(email: clean_email, password: rawPassword));
+    } else {
+      // If it returns false, Flutter automatically halts execution
+      // and lights up the red error states on the screen.
+      print("Validation failed. Halting network submission.");
+    }
   }
 
   @override
@@ -86,22 +107,7 @@ class _SignUpState extends State<SignUp> {
                   enablebackground: true,
                   enableBorder: false,
                   enableBold: true,
-                  onTap: () {
-                    setState(() {
-                      _hasAttempted = true;
-                    });
-                    if (_formKey.currentState!.validate()) {
-                      print("Form is perfectly clean. Routing data...");
-                      context.push(AppRouter.username_register,
-                          extra: Registerrequest(
-                              email: _emailController.text.trim(),
-                              password: _passwordController.text));
-                    } else {
-                      // If it returns false, Flutter automatically halts execution
-                      // and lights up the red error states on the screen.
-                      print("Validation failed. Halting network submission.");
-                    }
-                  },
+                  onTap: _submit,
                 ),
                 const SizedBox(height: 200),
               ],

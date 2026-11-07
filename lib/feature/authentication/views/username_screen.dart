@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vigango/core/routers/app_router.dart';
+import 'package:vigango/core/utils/sanitizers.dart';
 import 'package:vigango/core/utils/validators.dart';
 import 'package:vigango/core/widgets/buttons/noicon.dart';
 import 'package:vigango/feature/authentication/models/registerrequest.dart';
@@ -39,6 +40,8 @@ class _UsernameScreenState extends State<UsernameScreen> {
   }
 
   void _submit() async {
+    String sanitizedUsername = AppSanitizer.username(_usernameController.text);
+
     //stop immediately
     if (!_formkey.currentState!.validate()) return;
 
@@ -57,8 +60,7 @@ class _UsernameScreenState extends State<UsernameScreen> {
       appBar: AppBar(),
       body: SafeArea(
           child: Padding(
-        padding: const EdgeInsetsGeometry.symmetric(
-            horizontal: 24.0, vertical: 16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
         child: _usernameView(),
       )),
     );

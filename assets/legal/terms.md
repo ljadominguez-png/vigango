@@ -1,5 +1,3 @@
-# Terms of Service
-
 ## 1. Acceptance of Terms
 
 By accessing or using **ViganGo**, you agree to be bound by these Terms of Service. If you do not agree to these terms, please stop using the Application.
