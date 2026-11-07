@@ -16,6 +16,7 @@ from app.schemas.auth import (
     TokenResponse,
     UserResponse,
 )
+from app.services.current_user import get_current_user
 from app.services.google_config import get_google_client_id
 from app.services.google_identity import (
     GoogleVerificationUnavailable,
@@ -212,3 +213,14 @@ def login_user(
     return TokenResponse(
         access_token=access_token,
     )
+
+
+# Return the account profile of the authenticated user.
+@router.get(
+    "/me",
+    response_model=UserResponse,
+)
+def read_current_user(
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> User:
+    return current_user
