@@ -20,3 +20,17 @@ class UserResponse(BaseModel):
     username: str
     email: EmailStr
     image_url: str | None = None
+
+
+# Validate Google identity tokens and optional registration usernames.
+class GoogleAuthRequest(BaseModel):
+    id_token: str = Field(
+        min_length=1,
+        max_length=16384,
+        repr=False,
+    )
+    username: str | None = Field(
+        default=None,
+        min_length=3,
+        max_length=50,
+    )
