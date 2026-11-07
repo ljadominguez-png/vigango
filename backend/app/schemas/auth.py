@@ -1,5 +1,6 @@
 """Define request and response schemas for user authentication."""
 
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
@@ -43,3 +44,9 @@ class LoginRequest(BaseModel):
         min_length=1,
         repr=False,
     )
+
+
+# Define the access token returned after successful authentication.
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: Literal["bearer"] = "bearer"

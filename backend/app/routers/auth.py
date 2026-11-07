@@ -9,14 +9,25 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import User
-from app.schemas.auth import GoogleAuthRequest, RegisterRequest, UserResponse
+from app.schemas.auth import (
+    GoogleAuthRequest,
+    LoginRequest,
+    RegisterRequest,
+    TokenResponse,
+    UserResponse,
+)
 from app.services.google_config import get_google_client_id
 from app.services.google_identity import (
     GoogleVerificationUnavailable,
     InvalidGoogleToken,
     verify_google_token,
 )
+from app.services.login import authenticate_local_user
 from app.services.password import hash_password
+from app.services.tokens import (
+    JWTConfigurationError,
+    create_access_token,
+)
 
 router = APIRouter(
     prefix="/api/v1/auth",
@@ -161,3 +172,43 @@ def register_google_user(
     db.refresh(new_user)
 
     return new_user
+
+
+# Authenticate local credentials and issue a signed JWT access token.
+@router.post(
+    "/login",
+    response_model=TokenResponse,
+    status_code=status.HTTP_200_OK,
+)
+def login_user(
+    data: LoginRequest,
+    db: Annotated[Session, Depends(get_db)],
+) -> TokenResponse:
+
+    # Verify the supplied email and password.
+    user = authenticate_local_user(
+        db,
+        data.email,
+        data.password,
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Create an access token after successful authentication.
+    try:
+        access_token = create_access_token(user.id)
+
+    except JWTConfigurationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Authentication service is unavailable.",
+        ) from exc
+
+    return TokenResponse(
+        access_token=access_token,
+    )
