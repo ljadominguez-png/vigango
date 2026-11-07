@@ -1,8 +1,9 @@
-
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:go_router/go_router.dart';
+import 'package:vigango/core/routers/app_router.dart';
 import 'package:vigango/core/utils/validators.dart';
 import 'package:vigango/core/widgets/buttons/noicon.dart';
+import 'package:vigango/feature/authentication/models/registerrequest.dart';
 import 'package:vigango/feature/authentication/widgets/emailfield.dart';
 import 'package:vigango/feature/authentication/widgets/password_field.dart';
 
@@ -14,8 +15,6 @@ class SignUp extends StatefulWidget {
 }
 
 class _SignUpState extends State<SignUp> {
-  bool _obscureText = true;
-  bool _obscureText2 = true;
   bool _hasAttempted = false;
   final _formKey = GlobalKey<FormState>();
 
@@ -35,10 +34,10 @@ class _SignUpState extends State<SignUp> {
   @override
   void dispose() {
     // TODO: implement dispose
-    super.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPassword.dispose();
+    super.dispose();
   }
 
   @override
@@ -53,7 +52,9 @@ class _SignUpState extends State<SignUp> {
           padding: const EdgeInsets.all(8.0),
           child: Form(
             key: _formKey,
-            autovalidateMode: _hasAttempted ? AutovalidateMode.onUserInteraction : AutovalidateMode.disabled, 
+            autovalidateMode: _hasAttempted
+                ? AutovalidateMode.onUserInteraction
+                : AutovalidateMode.disabled,
             child: Column(
               children: [
                 Column(
@@ -66,18 +67,22 @@ class _SignUpState extends State<SignUp> {
                 ),
                 const SizedBox(height: 18),
                 PasswordField(
-                controller: _passwordController, 
-                hintText: 'Min of 8 characters',
-                label: 'Password',
-                ),
+                    controller: _passwordController,
+                    hintText: 'Min of 8 characters',
+                    label: 'Password',
+                    validator: (value) =>
+                        AppValidators.validatePassword(value)),
                 const SizedBox(height: 18),
                 PasswordField(
-                  controller: _confirmPassword, 
-                  label: 'Confirm Password', 
-                  hintText: ''),
+                  controller: _confirmPassword,
+                  label: 'Confirm Password',
+                  hintText: 'Re-type your  Password',
+                  validator: (value) => AppValidators.confirmPassword(
+                      _passwordController.text, value),
+                ),
                 const SizedBox(height: 36),
                 NoIcon(
-                  buttonLabel: 'Create Account',
+                  buttonLabel: 'Continue',
                   enablebackground: true,
                   enableBorder: false,
                   enableBold: true,
@@ -86,7 +91,11 @@ class _SignUpState extends State<SignUp> {
                       _hasAttempted = true;
                     });
                     if (_formKey.currentState!.validate()) {
-                       print("Form is perfectly clean. Routing data...");
+                      print("Form is perfectly clean. Routing data...");
+                      context.push(AppRouter.username_register,
+                          extra: Registerrequest(
+                              email: _emailController.text.trim(),
+                              password: _passwordController.text));
                     } else {
                       // If it returns false, Flutter automatically halts execution
                       // and lights up the red error states on the screen.
@@ -102,7 +111,4 @@ class _SignUpState extends State<SignUp> {
       ),
     );
   }
-
-  
 }
-

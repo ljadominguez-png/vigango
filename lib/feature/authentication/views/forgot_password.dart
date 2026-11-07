@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vigango/core/utils/validators.dart';
 import 'package:vigango/core/widgets/buttons/noicon.dart';
+import 'package:vigango/feature/authentication/widgets/emailfield.dart';
+import 'package:vigango/feature/authentication/widgets/text_field.dart';
 
 class ForgotPassword extends StatefulWidget {
   const ForgotPassword({super.key});
@@ -74,19 +76,7 @@ class _ForgotPasswordScreenState extends State<ForgotPassword> {
           // Email Input
           const Text("Email"),
           const SizedBox(height: 8),
-          TextFormField(
-            controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
-            textInputAction: TextInputAction.done,
-            decoration: InputDecoration(
-              hintText: "you@example.com",
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15),
-              ),
-            ),
-            validator: AppValidators.validateEmail,
-          ),
-
+          emailField(emailController: _emailController),
           const SizedBox(height: 32),
 
           // Submit Button

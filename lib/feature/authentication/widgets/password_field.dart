@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:vigango/core/utils/validators.dart';
 
 class PasswordField extends StatefulWidget {
   final TextEditingController controller;
   final String label;
   final String hintText;
+  final String? Function(String?)? validator;
 
   const PasswordField({
     super.key,
     required this.controller,
     required this.label,
     required this.hintText,
+    this.validator,
   });
 
   @override
@@ -50,7 +51,7 @@ class _PasswordFieldState extends State<PasswordField> {
               ),
             ),
           ),
-          validator: (value){AppValidators.validatePassword(value);},
+          validator: widget.validator,
         ),
       ],
     );

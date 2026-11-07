@@ -12,15 +12,15 @@ class emailField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextFormField(
-      controller: _emailController,
-      decoration: InputDecoration(
-        hintText: "you@example.com",
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
+        controller: _emailController,
+        decoration: InputDecoration(
+          hintText: "you@example.com",
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
         ),
-      ),
-      validator: (value){AppValidators.validateEmail(value);
-      }
-    );
+        validator: (value) {
+          return AppValidators.validateEmail(value);
+        });
   }
 }
