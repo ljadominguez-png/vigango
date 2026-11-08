@@ -1,11 +1,14 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vigango/core/routers/app_router.dart';
 import 'package:vigango/core/utils/sanitizers.dart';
 import 'package:vigango/core/utils/validators.dart';
 import 'package:vigango/core/widgets/buttons/noicon.dart';
 import 'package:vigango/feature/authentication/models/registerrequest.dart';
+import 'package:vigango/feature/authentication/presenters/auth_cubit.dart';
+import 'package:vigango/feature/authentication/presenters/auth_state.dart';
 import 'package:vigango/feature/authentication/widgets/text_field.dart';
 
 class UsernameScreen extends StatefulWidget {
@@ -46,12 +49,12 @@ class _UsernameScreenState extends State<UsernameScreen> {
     if (!_formkey.currentState!.validate()) return;
 
     //if none then submit the user's new acc
-
+    context.read<AuthCubit>().register(
+      email: widget.registerData.email,
+      password: widget.registerData.password,
+      username: sanitizedUsername);
     //wait till userprof is uploaded
     setState(() => _isloading = true);
-
-    //if done proceed to greeter
-    context.go(AppRouter.welcome);
   }
 
   @override
@@ -61,12 +64,13 @@ class _UsernameScreenState extends State<UsernameScreen> {
       body: SafeArea(
           child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-        child: _usernameView(),
+        child: BlocConsumer<AuthCubit, AuthState>(
+          builder: _usernameView()),
       )),
     );
   }
 
-  Widget _usernameView() {
+  Widget _usernameView({required bool isLoading}) {
     return Form(
         key: _formkey,
         child: Column(
