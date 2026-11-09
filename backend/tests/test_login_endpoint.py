@@ -57,8 +57,85 @@ def test_login_success(login_client):
     body = response.json()
 
     assert body["token_type"] == "bearer"
-    assert set(body) == {"access_token", "token_type"}
+    assert body["id"] == str(user_id)
+    assert body["email"] == "traveler@example.com"
     assert decode_access_token(body["access_token"]) == user_id
+
+    # Only public profile fields and the token are returned.
+    assert set(body) == {
+        "id",
+        "username",
+        "email",
+        "image_url",
+        "access_token",
+        "token_type",
+    }
+
+
+# Verify a token from login unlocks the protected profile endpoint.
+def test_login_token_reads_profile(login_client):
+    client, db = login_client
+    user = User(
+        id=uuid4(),
+        username="traveler",
+        email="traveler@example.com",
+        password_hash=hash_password("ExamplePassword123!"),
+    )
+
+    db.scalar.return_value = user
+    db.get.return_value = user
+
+    login = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": "traveler@example.com",
+            "password": "ExamplePassword123!",
+        },
+    )
+
+    profile = client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": f"Bearer {login.json()['access_token']}"},
+    )
+
+    assert profile.status_code == 200
+    assert profile.json()["id"] == str(user.id)
+
+
+# Verify failed logins never include an access token.
+def test_login_failure_has_no_token(login_client):
+    client, db = login_client
+    db.scalar.return_value = None
+
+    response = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": "unknown@example.com",
+            "password": "ExamplePassword123!",
+        },
+    )
+
+    assert response.status_code == 401
+    assert "access_token" not in response.json()
+
+
+# Verify malformed login requests are rejected before authentication.
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"email": "not-an-email", "password": "ExamplePassword123!"},
+        {"email": "traveler@example.com", "password": ""},
+        {"email": "traveler@example.com"},
+        {"password": "ExamplePassword123!"},
+    ],
+)
+def test_login_rejects_invalid_payload(login_client, payload):
+    client, db = login_client
+
+    response = client.post("/api/v1/auth/login", json=payload)
+
+    assert response.status_code == 422
+    db.scalar.assert_not_called()
 
 
 # Verify incorrect passwords return a generic authentication error.

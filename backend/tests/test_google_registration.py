@@ -6,6 +6,7 @@ from uuid import uuid4
 import pytest
 from app.database import get_db
 from app.main import app
+from app.models import User
 from app.routers import auth as auth_router
 from app.services.google_config import get_google_client_id
 from app.services.google_identity import (
@@ -13,6 +14,7 @@ from app.services.google_identity import (
     GoogleVerificationUnavailable,
     InvalidGoogleToken,
 )
+from app.services.tokens import decode_access_token
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
@@ -79,6 +81,10 @@ def test_register_new_google_user(google_client):
     assert user.google_id == "google-user-123"
     assert user.password_hash is None
 
+    # New Google users are signed in immediately.
+    assert response.json()["token_type"] == "bearer"
+    assert decode_access_token(response.json()["access_token"]) == user.id
+
     fake_db.commit.assert_called_once()
 
 
@@ -105,8 +111,32 @@ def test_return_existing_google_user(google_client):
 
     assert response.status_code == 200
     assert response.json()["username"] == "google_tester"
+    assert decode_access_token(response.json()["access_token"]) == existing_user.id
 
     fake_db.add.assert_not_called()
+
+
+# Verify Google sign-in reports missing JWT configuration without a token.
+def test_google_sign_in_missing_signing_secret(google_client, monkeypatch):
+    client, fake_db = google_client
+
+    fake_db.scalar.return_value = User(
+        id=uuid4(),
+        username="google_tester",
+        email="tester@gmail.com",
+        google_id="google-user-123",
+        password_hash=None,
+    )
+
+    monkeypatch.delenv("JWT_SECRET_KEY", raising=False)
+
+    response = client.post(
+        "/api/v1/auth/google",
+        json={"id_token": "sample-token"},
+    )
+
+    assert response.status_code == 503
+    assert "access_token" not in response.json()
 
 
 # Verify matching emails are not automatically linked.

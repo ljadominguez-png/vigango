@@ -1,4 +1,4 @@
-"""Handle user registration requests through the authentication API."""
+"""Handle user registration, login, and profile requests through the authentication API."""
 
 from typing import Annotated
 
@@ -10,10 +10,10 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
 from app.schemas.auth import (
+    AuthResponse,
     GoogleAuthRequest,
     LoginRequest,
     RegisterRequest,
-    TokenResponse,
     UserResponse,
 )
 from app.services.current_user import get_current_user
@@ -34,6 +34,25 @@ router = APIRouter(
     prefix="/api/v1/auth",
     tags=["Authentication"],
 )
+
+
+# Combine the user's public profile with a newly signed access token.
+def create_auth_response(user: User) -> AuthResponse:
+    try:
+        access_token = create_access_token(user.id)
+
+    except JWTConfigurationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Authentication service is unavailable.",
+        ) from exc
+
+    profile = UserResponse.model_validate(user)
+
+    return AuthResponse(
+        **profile.model_dump(),
+        access_token=access_token,
+    )
 
 
 # Register a new user with a securely hashed password..
@@ -80,10 +99,10 @@ def register_user(
     return new_user
 
 
-# Register or retrieve a user using a verified Google identity.
+# Register or sign in a verified Google user and issue an access token.
 @router.post(
     "/google",
-    response_model=UserResponse,
+    response_model=AuthResponse,
     status_code=status.HTTP_201_CREATED,
 )
 def register_google_user(
@@ -91,7 +110,7 @@ def register_google_user(
     response: Response,
     db: Annotated[Session, Depends(get_db)],
     client_id: Annotated[str, Depends(get_google_client_id)],
-) -> User:
+) -> AuthResponse:
 
     if not client_id:
         raise HTTPException(
@@ -121,7 +140,7 @@ def register_google_user(
 
     if existing_user is not None:
         response.status_code = status.HTTP_200_OK
-        return existing_user
+        return create_auth_response(existing_user)
 
     # Prevent automatic linking to an existing email account.
     existing_email = db.scalar(
@@ -172,19 +191,19 @@ def register_google_user(
 
     db.refresh(new_user)
 
-    return new_user
+    return create_auth_response(new_user)
 
 
 # Authenticate local credentials and issue a signed JWT access token.
 @router.post(
     "/login",
-    response_model=TokenResponse,
+    response_model=AuthResponse,
     status_code=status.HTTP_200_OK,
 )
 def login_user(
     data: LoginRequest,
     db: Annotated[Session, Depends(get_db)],
-) -> TokenResponse:
+) -> AuthResponse:
 
     # Verify the supplied email and password.
     user = authenticate_local_user(
@@ -200,19 +219,8 @@ def login_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Create an access token after successful authentication.
-    try:
-        access_token = create_access_token(user.id)
-
-    except JWTConfigurationError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Authentication service is unavailable.",
-        ) from exc
-
-    return TokenResponse(
-        access_token=access_token,
-    )
+    # Return the profile with an access token after successful authentication.
+    return create_auth_response(user)
 
 
 # Return the account profile of the authenticated user.

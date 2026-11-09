@@ -46,7 +46,7 @@ class LoginRequest(BaseModel):
     )
 
 
-# Define the access token returned after successful authentication.
-class TokenResponse(BaseModel):
+# Define the profile and access token returned after successful authentication.
+class AuthResponse(UserResponse):
     access_token: str
     token_type: Literal["bearer"] = "bearer"

@@ -525,6 +525,8 @@ def test_login_and_me_with_postgres(postgres_client, jwt_test_key):
 
     assert login.status_code == 200
     assert login.json()["token_type"] == "bearer"
+    assert login.json()["id"] == registered.json()["id"]
+    assert "password_hash" not in login.json()
 
     token = login.json()["access_token"]
 
@@ -640,3 +642,41 @@ def test_login_accepts_case_variant_email_db(
 
     assert response.status_code == 200
     assert response.json()["token_type"] == "bearer"
+
+
+# Verify a returning Google user receives a token that unlocks their profile.
+def test_google_sign_in_and_me_with_postgres(
+    postgres_client,
+    trusted_google_identity,
+    jwt_test_key,
+):
+    client, _ = postgres_client
+
+    identity = trusted_google_identity
+
+    registered = client.post(
+        "/api/v1/auth/google",
+        json={
+            "id_token": "integration-test-token",
+            "username": f"google_{uuid4().hex[:12]}",
+        },
+    )
+
+    assert registered.status_code == 201
+
+    signed_in = client.post(
+        "/api/v1/auth/google",
+        json={"id_token": "integration-test-token"},
+    )
+
+    assert signed_in.status_code == 200
+    assert signed_in.json()["id"] == registered.json()["id"]
+
+    profile = client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": f"Bearer {signed_in.json()['access_token']}"},
+    )
+
+    assert profile.status_code == 200
+    assert profile.json()["email"] == identity.email
+    assert "google_id" not in profile.json()

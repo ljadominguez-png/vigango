@@ -9,5 +9,6 @@ This directory contains implementation reports and feature-specific notes for Vi
 | F3.2    | [Case-insensitive user uniqueness](f3.2-case-insensitive-users.md) | `lower(username)`/`lower(email)` unique indexes, rollout checks, and database verification.                     |
 | F4.1    | [Database models](f4.1-database-models.md)                         | Database tables, model relationships, and historical model verification.                                        |
 | F4.2    | [User registration and Google support](f4.2-user-registration.md)  | Password registration, Google token verification, account creation, security tests, and PostgreSQL integration. |
+| F4.3    | [User login and access tokens](f4.3-user-login.md)                 | Email/password login, Google sign-in tokens, JWT access tokens, `/me`, and login security tests.                |
 
 For each future Scrum feature, create one focused report and link it here. Never include real passwords, ID tokens, or production connection strings in documentation.
