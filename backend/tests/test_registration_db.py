@@ -486,3 +486,157 @@ def test_database_rejects_case_variant_email(postgres_client):
             db.flush()
 
         db.rollback()
+
+
+# Configure a temporary JWT signing key for integration tests.
+@pytest.fixture
+def jwt_test_key(monkeypatch):
+    monkeypatch.setenv(
+        "JWT_SECRET_KEY",
+        "local-integration-test-secret-0123456789abcdef",
+    )
+
+
+# Verify registration, login, and protected profile retrieval.
+def test_login_and_me_with_postgres(postgres_client, jwt_test_key):
+    client, connection = postgres_client
+
+    identifier = uuid4().hex
+    email = f"login_{identifier}@example.com"
+
+    registered = client.post(
+        "/api/v1/auth/register",
+        json={
+            "username": f"login_{identifier[:12]}",
+            "email": email,
+            "password": "ExamplePassword123!",
+        },
+    )
+
+    assert registered.status_code == 201
+
+    login = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": email,
+            "password": "ExamplePassword123!",
+        },
+    )
+
+    assert login.status_code == 200
+    assert login.json()["token_type"] == "bearer"
+
+    token = login.json()["access_token"]
+
+    profile = client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert profile.status_code == 200
+    assert profile.json()["id"] == registered.json()["id"]
+    assert profile.json()["email"] == email
+    assert "password_hash" not in profile.json()
+    assert "google_id" not in profile.json()
+
+    stored_user = connection.execute(
+        select(User.id).where(User.email == email)
+    ).scalar_one()
+
+    assert str(stored_user) == registered.json()["id"]
+
+
+# Verify real PostgreSQL accounts reject incorrect passwords.
+def test_login_rejects_wrong_password_db(postgres_client, jwt_test_key):
+    client, _ = postgres_client
+
+    identifier = uuid4().hex
+    email = f"wrong_{identifier}@example.com"
+
+    registered = client.post(
+        "/api/v1/auth/register",
+        json={
+            "username": f"wrong_{identifier[:12]}",
+            "email": email,
+            "password": "ExamplePassword123!",
+        },
+    )
+
+    assert registered.status_code == 201
+
+    response = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": email,
+            "password": "IncorrectPassword123!",
+        },
+    )
+
+    assert response.status_code == 401
+    assert response.headers["www-authenticate"] == "Bearer"
+    assert "access_token" not in response.json()
+
+
+# Verify Google-only accounts cannot use local password login.
+def test_login_rejects_google_only_account_db(
+    postgres_client,
+    trusted_google_identity,
+    jwt_test_key,
+):
+    client, _ = postgres_client
+
+    identity = trusted_google_identity
+
+    registered = client.post(
+        "/api/v1/auth/google",
+        json={
+            "id_token": "integration-test-token",
+            "username": f"google_{uuid4().hex[:12]}",
+        },
+    )
+
+    assert registered.status_code == 201
+
+    response = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": identity.email,
+            "password": "ExamplePassword123!",
+        },
+    )
+
+    assert response.status_code == 401
+    assert "access_token" not in response.json()
+
+
+# Verify email lookup works regardless of letter casing.
+def test_login_accepts_case_variant_email_db(
+    postgres_client,
+    jwt_test_key,
+):
+    client, _ = postgres_client
+
+    identifier = uuid4().hex
+    email = f"Traveler_{identifier}@example.com"
+
+    registered = client.post(
+        "/api/v1/auth/register",
+        json={
+            "username": f"traveler_{identifier[:12]}",
+            "email": email,
+            "password": "ExamplePassword123!",
+        },
+    )
+
+    assert registered.status_code == 201
+
+    response = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": email.lower(),
+            "password": "ExamplePassword123!",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["token_type"] == "bearer"
